@@ -94,6 +94,7 @@ async function locateNextEvent() {
     //find the next event element
     let selector = '//*[contains(@id, "anchor' + eventCount + '")]';
 
+    //check if the next element has loaded on screen
     let element = await getEventElement(selector);
 
     //while element does not exist
