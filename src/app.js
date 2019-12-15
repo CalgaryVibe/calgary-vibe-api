@@ -99,7 +99,7 @@ async function locateNextEvent() {
     //while element does not exist
     if(!element) {
 
-        for(scrollCount; scrollCount < MAX_SCROLL_LOOP_LIMIT; ++scrollCount) {
+        for(scrollCount = 0; scrollCount < MAX_SCROLL_LOOP_LIMIT; ++scrollCount) {
 
             //increase by scroll amount
             scrollY += SCROLL_AMOUNT;
