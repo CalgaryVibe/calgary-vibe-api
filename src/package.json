@@ -1,0 +1,23 @@
+{
+  "name": "calgary-vibe-api",
+  "version": "1.0.0",
+  "description": "Calgary Vibe API Service",
+  "main": "./app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CalgaryVibe/calgary-vibe-api.git"
+  },
+  "dependencies": {
+    "express": "4.17.1",
+    "selenium-webdriver": "4.0.0-alpha.5"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/CalgaryVibe/calgary-vibe-api/issues"
+  },
+  "homepage": "https://github.com/CalgaryVibe/calgary-vibe-api#readme"
+}
