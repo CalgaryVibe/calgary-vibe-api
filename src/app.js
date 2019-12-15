@@ -4,16 +4,17 @@ const chrome = require('selenium-webdriver/chrome');
 const config = require('../config/index');
 
 const MAX_EVENT_LOOP_LIMIT = 500;
-const MAX_SCROLL_LOOP_LIMIT = 1000;
-
 const ACTION_DELAY = 1000;
-const SCROLL_DELAY = 1000;
+
+const MAX_SCROLL_LOOP_LIMIT = 5000;
+const SCROLL_DELAY = 750;
 
 let SCROLL_AMOUNT = 300;
 
-let driver;
 let eventCount = 0;
 let scrollCount = 0;
+
+let driver;
 
 (async function init() {
 
@@ -81,6 +82,7 @@ async function scrape() {
 
     } while (eventCount < MAX_EVENT_LOOP_LIMIT);
 
+    //quit the driver if we have reached max loop limit
     await driver.quit();
 }
 
@@ -111,7 +113,12 @@ async function locateNextEvent() {
 
             if(element) break;
         }
+
+        //quit the driver if we have reached the max scroll limit
+        if(scrollCount >= MAX_SCROLL_LOOP_LIMIT) await driver.quit();
     }
+
+
 
     try {
 
@@ -165,10 +172,7 @@ async function scrapeEvent() {
 }
 
 async function getEventElement(selector) {
-    let elements;
-
-    //returns an array of any elements found
-    elements = await driver.findElements( By.xpath(selector) );
+    let elements = await driver.findElements( By.xpath(selector) );
 
     //did we find any elements?
     if(elements.length > 0) {
