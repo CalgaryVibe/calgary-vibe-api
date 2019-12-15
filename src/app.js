@@ -7,9 +7,8 @@ const MAX_EVENT_LOOP_LIMIT = 500;
 const ACTION_DELAY = 1000;
 
 const MAX_SCROLL_LOOP_LIMIT = 5000;
-const SCROLL_DELAY = 750;
-
-let SCROLL_AMOUNT = 300;
+const SCROLL_DELAY = 250;
+const SCROLL_AMOUNT = 350;
 
 let eventCount = 0;
 let scrollCount = 0;
@@ -27,7 +26,7 @@ let driver;
         await scrape();
 
     } catch (e) {
-        console.log(e);
+        console.log(e.message);
     }
 
 })();
@@ -35,23 +34,25 @@ let driver;
 async function buildDriver() {
     try {
 
+        //hide notifications
         const options = new chrome.Options();
         options.setUserPreferences({'profile.default_content_setting_values.notifications': 2});
 
+        //build the chrome driver
         driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
 
     } catch(e) {
-        console.log(e);
+        throw new Error('An error occurred while trying to build the chrome driver')
     }
 }
 
 async function login(url, email, pass) {
     try {
 
-        // Navigate to Url
+        // Navigate to the login url
         await driver.get(url);
 
-        // Enter email and password and perform keyboard action "Enter"
+        // Enter email and password then perform keyboard action "Enter"
         await driver.findElement( By.name('email' ) ).sendKeys(email);
         await driver.findElement( By.name('pass' ) ).sendKeys(pass, Key.ENTER);
 
@@ -105,12 +106,12 @@ async function locateNextEvent() {
 
             //wait and scroll
             await driver.sleep(SCROLL_DELAY);
-
             await driver.executeScript(`window.scrollTo(0, ${scrollY})`);
 
             //check to see if we have found the element
             element = await getEventElement(selector);
 
+            //if an element was found break the loop
             if(element) break;
         }
 
@@ -118,10 +119,9 @@ async function locateNextEvent() {
         if(scrollCount >= MAX_SCROLL_LOOP_LIMIT) await driver.quit();
     }
 
-
-
     try {
 
+        //once an element has been found, scroll it into view and click it
         await driver.executeScript("arguments[0].scrollIntoView();", element);
         await element.click();
 
@@ -176,6 +176,8 @@ async function getEventElement(selector) {
 
     //did we find any elements?
     if(elements.length > 0) {
+
+        //return the first element found
         return elements[0];
     }
 
