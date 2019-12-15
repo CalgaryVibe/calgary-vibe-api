@@ -1,14 +1,18 @@
 const {Builder, By, Key} = require('selenium-webdriver');
 
+const config = require('./config').auth;
 const chrome = require('selenium-webdriver/chrome');
-const config = require('../config/index');
+
+const firebase = require('./modules/firebase');
+const geo = require('./modules/geolocator');
 
 const MAX_EVENT_LOOP_LIMIT = 500;
-const ACTION_DELAY = 1000;
-
 const MAX_SCROLL_LOOP_LIMIT = 5000;
-const SCROLL_DELAY = 250;
-const SCROLL_AMOUNT = 350;
+
+const ACTION_DELAY_MS = 1000;
+const SCROLL_DELAY_MS = 250;
+
+const SCROLL_AMOUNT_PX = 350;
 
 let eventCount = 0;
 let scrollCount = 0;
@@ -21,7 +25,7 @@ let driver;
 
         await buildDriver();
 
-        await login('https://www.facebook.com/', config.authentication.email, config.authentication.pass);
+        await login('https://www.facebook.com/', config.email, config.pass);
 
         await scrape();
 
@@ -67,7 +71,7 @@ async function scrape() {
 
         await driver.get('https://www.facebook.com/events/discovery/');
 
-        await driver.sleep( ACTION_DELAY );
+        await driver.sleep( ACTION_DELAY_MS );
 
         try {
 
@@ -103,10 +107,10 @@ async function locateNextEvent() {
         for(scrollCount = 0; scrollCount < MAX_SCROLL_LOOP_LIMIT; ++scrollCount) {
 
             //increase by scroll amount
-            scrollY += SCROLL_AMOUNT;
+            scrollY += SCROLL_AMOUNT_PX;
 
             //wait and scroll
-            await driver.sleep(SCROLL_DELAY);
+            await driver.sleep(SCROLL_DELAY_MS);
             await driver.executeScript(`window.scrollTo(0, ${scrollY})`);
 
             //check to see if we have found the element
@@ -134,7 +138,7 @@ async function locateNextEvent() {
 
 async function scrapeEvent() {
 
-    await driver.sleep( ACTION_DELAY );
+    await driver.sleep( ACTION_DELAY_MS );
 
     let titleElement, dateElement, addressElement, venueElement, pictureElement, descriptionElement;
     let title, date, address, venue, picture, description;

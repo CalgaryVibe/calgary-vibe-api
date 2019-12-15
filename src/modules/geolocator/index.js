@@ -26,5 +26,4 @@ self.geolocate = async (q, limit = 1) => {
     return null;
 };
 
-
 module.exports = self;
