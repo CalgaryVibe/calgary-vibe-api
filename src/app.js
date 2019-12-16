@@ -1,18 +1,14 @@
-const {Builder, By, Key} = require('selenium-webdriver');
-
 const config = require('./config').auth;
 const chrome = require('selenium-webdriver/chrome');
-
-const firebase = require('./modules/firebase');
-const geo = require('./modules/geolocator');
+const {Builder, By, Key} = require('selenium-webdriver');
 
 const MAX_EVENT_LOOP_LIMIT = 500;
-const MAX_SCROLL_LOOP_LIMIT = 5000;
+const MAX_SCROLL_LOOP_LIMIT = 100000;
 
 const ACTION_DELAY_MS = 1000;
-const SCROLL_DELAY_MS = 250;
+const SCROLL_DELAY_MS = 150;
 
-const SCROLL_AMOUNT_PX = 350;
+const SCROLL_AMOUNT_PX = 450;
 
 let eventCount = 0;
 let scrollCount = 0;
