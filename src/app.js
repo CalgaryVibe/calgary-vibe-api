@@ -66,13 +66,11 @@ async function scrape() {
     do {
 
         await driver.get('https://www.facebook.com/events/discovery/');
-
         await driver.sleep( ACTION_DELAY_MS );
 
         try {
 
             await locateNextEvent();
-
             await scrapeEvent();
 
         } catch (e) {
@@ -149,7 +147,7 @@ async function scrapeEvent() {
         pictureElement = await driver.findElement(By.xpath('//*[@id="event_header_primary"]/div[1]/div[1]/a/div/img'));
 
     } catch(e) {
-        console.log('Could not find all elements required for this event.');
+        console.log(`Could not find all elements required for event [${eventCount}]`);
     }
 
     if(titleElement && dateElement && addressElement && venueElement && descriptionElement && pictureElement) {

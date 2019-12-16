@@ -1,5 +1,6 @@
 const config = require('../../config').database;
 const admin = require('firebase-admin');
+const eventUtils = require('../event-utils/index');
 
 admin.initializeApp({
     credential: admin.credential.cert(config.credential),
@@ -8,29 +9,51 @@ admin.initializeApp({
 
 let self = {
     auth: admin.auth,
-    database: admin.database
+    database: admin.database,
+    storage: admin.storage
 };
 
-self.makeEvent = function(params) {
+self.makeEvent = async function(params) {
 
-    const formattedEvent = {};
+    let lat, lng, timestamp, image;
 
-    const [title, venue, description, address, date, picture] = params;
+    const [title, location, description, address, date, imageUrl] = params;
 
-    //checkForEventDuplicate(params);
+    const formattedEvent = {
+        title,
+        description,
+        location,
+        tag: eventUtils.getLocationTag(location, address)
+    };
 
     try {
 
-        //.. fill formatted event
+        const location_data = await eventUtils.geocodeLocation(address);
+
+        lat = location_data.lat;
+        lng = location_data.lng;
+
+        image = await eventUtils.sanitizeImageUrL(imageUrl);
+        timestamp = await eventUtils.dateTextToTimestamp(date);
 
     } catch(e) {
         console.log(e.message);
     }
 
-    // Get a key for the new event
-    const newEventKey = self.database().ref().child('/events').push().key;
+    if(lat && lng && image && timestamp) {
 
-    return self.database().ref('/events/' + newEventKey).push(formattedEvent)
+        const newEventKey = self.database().ref().child('/events').push().key;
+
+        formattedEvent['key'] = newEventKey;
+        formattedEvent['lat'] = lat;
+        formattedEvent['lng'] = lng;
+        formattedEvent['image'] = image;
+        formattedEvent['timestamp'] = timestamp;
+
+        return await self.database().ref('/events/' + newEventKey).push(formattedEvent);
+    }
+
+    return null
 };
 
 module.exports = self;
