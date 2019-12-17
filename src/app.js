@@ -1,6 +1,7 @@
 const config = require('./config').auth;
 const chrome = require('selenium-webdriver/chrome');
 const {Builder, By, Key} = require('selenium-webdriver');
+const firebase = require('./modules/firebase/index');
 
 const MAX_EVENT_LOOP_LIMIT = 500;
 const MAX_SCROLL_LOOP_LIMIT = 100000;
@@ -21,7 +22,7 @@ let driver;
 
         await buildDriver();
 
-        await login('https://www.facebook.com/', config.email, config.pass);
+        await login(config.email, config.pass);
 
         await scrape();
 
@@ -46,11 +47,11 @@ async function buildDriver() {
     }
 }
 
-async function login(url, email, pass) {
+async function login(email, pass) {
     try {
 
-        // Navigate to the login url
-        await driver.get(url);
+        // Navigate to facebook login url
+        await driver.get('https://www.facebook.com/');
 
         // Enter email and password then perform keyboard action "Enter"
         await driver.findElement( By.name('email' ) ).sendKeys(email);
@@ -134,39 +135,37 @@ async function scrapeEvent() {
 
     await driver.sleep( ACTION_DELAY_MS );
 
-    let titleElement, dateElement, addressElement, venueElement, pictureElement, descriptionElement;
-    let title, date, address, venue, picture, description;
+    let titleElement, dateElement, addressElement, imageElement, descriptionElement;
+    let title, date, address, image, description;
 
     try {
 
         titleElement = await driver.findElement(By.xpath('//*[@id="seo_h1_tag"]'));
         dateElement = await driver.findElement(By.xpath('//*[@id="event_time_info"]/div/table/tbody/tr/td[2]/div/div/div[2]/div/div[1]'));
-        addressElement = await driver.findElement(By.xpath('//*[@id="u_0_19"]/table/tbody/tr/td[2]/div/div[1]/div/div[2]/div/div'));
-        venueElement = await driver.findElement(By.xpath('//*[@id="u_0_1a"]'));
-        descriptionElement = await driver.findElement(By.xpath('//*[@id="u_0_1p"]/div/div/div[2]/div/div/div/span'));
-        pictureElement = await driver.findElement(By.xpath('//*[@id="event_header_primary"]/div[1]/div[1]/a/div/img'));
+        addressElement = await driver.findElement(By.xpath('//*[@class="_4dpf _phw" or @class="_4dpf _phw"]'));
+        descriptionElement = await driver.findElement(By.xpath('//*[@class="_63eu"]'));
+        imageElement = await driver.findElement(By.xpath('//*[@class="scaledImageFitHeight img" or @class="scaledImageFitWidth img"]'));
 
     } catch(e) {
         console.log(`Could not find all elements required for event [${eventCount}]`);
     }
 
-    if(titleElement && dateElement && addressElement && venueElement && descriptionElement && pictureElement) {
+    if(titleElement && dateElement && addressElement && descriptionElement && imageElement) {
 
         try {
 
             title = await titleElement.getText();
             date = await dateElement.getText();
             address = await addressElement.getText();
-            venue = await venueElement.getText();
             description = await descriptionElement.getText();
-            picture = await pictureElement.getAttribute('src');
+            image = await imageElement.getAttribute('src');
 
         } catch(e) {
             console.log('Could not find all data required for this event.');
         }
 
-        console.log(title, date, address, venue, description, picture);
-
+        const eventResult = await firebase.makeEvent({title, date, address, description, image});
+        console.log(eventResult);
     }
 }
 

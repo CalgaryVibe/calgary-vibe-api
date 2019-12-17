@@ -1,4 +1,3 @@
-const firebase = require('../firebase/index');
 const geo = require('./geolocator');
 
 const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -43,6 +42,8 @@ async function dateTextToTimestamp(dateText) {
                 const dayIndex = Number(date_data[0]);
                 const yearIndex = Number(date_data[1]);
 
+                console.log(yearIndex, monthIndex, dayIndex);
+
                 date.setFullYear(yearIndex).setMonth(monthIndex).setDate(dayIndex);
 
             } else if (dayFound.length > 0) {
@@ -74,45 +75,18 @@ async function geocodeLocation(location, limit = 1) {
     }
 }
 
-function sanitizeImageUrL(oldURL) {
-
-    const fileName = oldURL.substring(url.lastIndexOf("/") + 1).split("?")[0];
-
-    getBlob(oldURL)
-        .then((blob) => {
-            const picRef = firebase.storage().ref().child(`${fileName}_${Date.now()}`);
-            return picRef.put(blob)
-        })
-        .then((snapshot) => snapshot.downloadURL)
-        .catch(() => oldURL)
-}
-
-function getBlob(url) {
-    return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        xhr.responseType = 'blob';
-
-        xhr.onload = function() { resolve(xhr.response) };
-        xhr.onerror = function() { reject() };
-
-        xhr.open('GET', url);
-        xhr.send();
-    });
-}
-
-function getLocationTag(location, address) {
+function getLocationTag(address) {
 
     //defaults to 'Club' tag
     let tag = CLUB;
 
-    location = location.toLowerCase();
     address = address.toLowerCase();
 
     //loop through all the location lookup keys
     Object.keys(locationTagLookup).map((key) => {
 
-        //if a location or address match anywhere in the location or address, set the tag from the lookup value
-        if(location.indexOf(key) || address.indexOf(key)) tag = locationTagLookup[key];
+        //if a tag matches anywhere in the address, set the tag from the lookup value
+        if(address.indexOf(key)) tag = locationTagLookup[key];
     });
 
     return tag;
@@ -122,4 +96,4 @@ async function checkForEventDuplicate(params) {
     //.. possibly even more cancer then date sanitizing
 }
 
-module.exports = {checkForEventDuplicate, dateTextToTimestamp, geocodeLocation, sanitizeImageUrL, getLocationTag};
+module.exports = {checkForEventDuplicate, dateTextToTimestamp, geocodeLocation, getLocationTag};
