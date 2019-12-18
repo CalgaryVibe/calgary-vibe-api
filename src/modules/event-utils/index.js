@@ -66,12 +66,18 @@ async function dateTextToTimestamp(dateText) {
     return new Date( date.setHours(0,0,0,0) ).getTime();
 }
 
-async function geocodeLocation(location, limit = 1) {
+async function geocodeLocation(address) {
     try {
-        const data = await geo.geolocate(location, limit);
-        return {lng: data.lon, lat: data.lat};
+        const response = await geo.geolocate(address);
+        const location = response.geometry.location;
+
+        return {
+            lng: location.lng,
+            lat: location.lat,
+            formatted_address: response.formatted_address
+        };
     } catch(e) {
-        throw new Error('Could not geo-locate the location: '+ location)
+        throw new Error('Could not geo-locate the location: ' + location)
     }
 }
 
@@ -92,8 +98,5 @@ function getLocationTag(address) {
     return tag;
 }
 
-async function checkForEventDuplicate(params) {
-    //.. possibly even more cancer then date sanitizing
-}
 
-module.exports = {checkForEventDuplicate, dateTextToTimestamp, geocodeLocation, getLocationTag};
+module.exports = {dateTextToTimestamp, geocodeLocation, getLocationTag};

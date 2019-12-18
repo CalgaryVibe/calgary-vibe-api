@@ -1,29 +1,30 @@
-const axios = require('axios');
+const config = require('../../config/index').google_maps;
+const googleMapsClient = require('@google/maps').createClient({
+    key: config.private_key
+});
 
 const self = {};
 
-self.geolocate = async (q, limit = 1) => {
+self.geolocate = async (q) => {
 
-    let payload;
+    return new Promise((resolve, reject) => {
 
-    const ENDPOINT = `https://nominatim.openstreetmap.org/search?q=${q}&limit=${limit}&format=json`;
-
-    try {
-
-        payload = await axios({
-            url: ENDPOINT,
-            method: 'get'
+        googleMapsClient.geocode({
+            address: q
+        }, function(err, response) {
+            if (!err) {
+                const results = response.json.results;
+                if(results && results.length > 0) {
+                    resolve(response.json.results[0]);
+                } else {
+                    reject(`Could not locate locate an address for ${q}`);
+                }
+            } else {
+                reject(err);
+            }
         });
 
-    } catch(e) {
-        throw new Error(`No response for Address: ${q}`);
-    }
-
-    if(payload.data.length > 0) {
-        return payload.data[0];
-    }
-
-    return null;
+    });
 };
 
 module.exports = self;
