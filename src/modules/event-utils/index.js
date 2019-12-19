@@ -12,6 +12,7 @@ const TAGS = {
 };
 
 //make sure any tag names added are lower case
+//these tags when found will override all other tags
 const locationTagOverrideLookup = {
     "cowboys club & casino" : TAGS.CLUB,
     "the ace nightclub": TAGS.CLUB,
@@ -24,11 +25,12 @@ const locationTagOverrideLookup = {
     "commonwealth bar & stage": TAGS.CLUB,
     "national on 8th": TAGS.CLUB,
     "twisted element": TAGS.CLUB,
-    "jack singer concert hall ": TAGS.CONCERT,
+    "jack singer concert hall": TAGS.CONCERT,
     "calgary flames" : TAGS.SPORTS,
     "calgary roughnecks" : TAGS.SPORTS,
 };
 
+//these when found will override the default tags
 const googleTagLookup = {
     "night_club" : TAGS.CLUB,
     "movie_theater": TAGS.THEATER,
@@ -37,8 +39,7 @@ const googleTagLookup = {
     "casino": TAGS.CLUB
 };
 
-let MINIMUM_MATCH_THRESHOLD = 3;
-
+//the default lookup's
 const default_tags = {
     "CONCERT": [
         'artist', 'music', 'festival', 'singer', 'songwriter', 'musician',
@@ -47,19 +48,12 @@ const default_tags = {
     ]
 };
 
-function newEventData(new_data, old_data) {
-    let newData = false;
+let MINIMUM_MATCH_THRESHOLD = 3;
 
-    //map the new data
-    Object.keys(new_data).map((key) => {
-        //if the property does exist in the old data or if any of the properties dont match, then flag to update
-        if(!old_data[key] || new_data[key] !== old_data[key]) newData = true;
-    });
+function getEventTag(title, description, locationTypes) {
 
-    return newData;
-}
-
-function getLocationTag(address, title, description, locationTypes) {
+    title = title.toLowerCase();
+    description = description.toLowerCase();
 
     //default all events to the 'Community' tag
     let tag = TAGS.COMMUNITY;
@@ -75,34 +69,32 @@ function getLocationTag(address, title, description, locationTypes) {
         _tags.map((t) => {
 
             //when we have found a match in the title or description add it to the match count
-            if (title.indexOf(t) > 0 || description.indexOf(t) > 0) ++matches;
+            if (title.indexOf(t) !== -1 || description.indexOf(t) !== -1) ++matches;
         });
 
-        //if the number of mathches is >= to the threshold, set this as the events new tag
+        //if the number of matches is >= to the threshold, set this as the events new tag
         if(matches >= MINIMUM_MATCH_THRESHOLD) {
             tag = _tag;
         }
     });
 
-    //loop through all the google tag keys
-    Object.keys(googleTagLookup).map((key) => {
+    if(locationTypes.length > 0) {
+        //loop through all the google tag keys
+        Object.keys(googleTagLookup).map((key) => {
 
-        //if a one of the google tags found from the address match, set that as the new tag
-        if(locationTypes.indexOf(key) > 0) tag = locationTagOverrideLookup[key];
-    });
-
-    address = address.toLowerCase();
-    title = title.toLowerCase();
-    description = description.toLowerCase();
+            //if a one of the google tags found from the address match, set that as the new tag
+            if (locationTypes.indexOf(key) !== -1) tag = googleTagLookup[key];
+        });
+    }
 
     //loop through all the location override lookup keys
     Object.keys(locationTagOverrideLookup).map((key) => {
 
         //if a tag matches anywhere in the address, description or title, set the override value as the new tag
-        if(address.indexOf(key) > 0 ||
-            description.indexOf(key) > 0 ||
-            title.indexOf(key) > 0
-        ) tag = locationTagOverrideLookup[key];
+        if(description.indexOf(key) !== -1 || title.indexOf(key) !== -1) {
+            tag = locationTagOverrideLookup[key];
+            console.log(tag);
+        }
 
     });
 
@@ -111,7 +103,7 @@ function getLocationTag(address, title, description, locationTypes) {
 
 async function dateTextToTimestamp(dateText) {
 
-    //default to todays date
+    //default to today's date
     const date = new Date();
 
     dateText = dateText.toLowerCase();
@@ -161,8 +153,10 @@ async function dateTextToTimestamp(dateText) {
         }
     }
 
+    //adjust for timezone
     const t = new Date( date.setHours( -(date.getTimezoneOffset() / 60),0,0,0) );
 
+    //return a UTC timestamp
     return Date.UTC(
         t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate(),
         t.getUTCHours(), t.getUTCMinutes(), t.getUTCSeconds(), t.getUTCMilliseconds()
@@ -187,4 +181,16 @@ async function geocodeLocation(address) {
     }
 }
 
-module.exports = {dateTextToTimestamp, geocodeLocation, getLocationTag, newEventData};
+function newEventData(new_data, old_data) {
+    let newData = false;
+
+    //map the new data
+    Object.keys(new_data).map((key) => {
+        //if the property does exist in the old data or if any of the properties dont match, then flag to update
+        if(!old_data[key] || new_data[key] !== old_data[key]) newData = true;
+    });
+
+    return newData;
+}
+
+module.exports = {dateTextToTimestamp, geocodeLocation, getEventTag, newEventData};

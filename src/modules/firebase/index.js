@@ -18,6 +18,7 @@ let self = {
 self.clearOldEvents = async function() {
 
     const expiredEvents = {};
+    const expiredFiles = [];
 
     const events = await self.database()
         .ref('/events')
@@ -30,12 +31,26 @@ self.clearOldEvents = async function() {
     if(eventCount > 0) {
 
         Object.keys(events).map((key) => {
-            if (Date.now() >= events[key].timestamp + 86400000) expiredEvents[key] = null;
+            if (Date.now() >= events[key].timestamp + 86400000) {
+                expiredFiles.push( events[key].image.split('/').pop().split('?')[0] );
+                expiredEvents[key] = null;
+            }
         });
 
+        //remove any old expired events from firebase
         await self.database()
             .ref('/events').update(expiredEvents);
 
+        //remove any expired images from storage
+        if(expiredFiles > 0) {
+            const bucket = admin.storage().bucket();
+
+            for (let i = 0, l = expiredFiles.length; i < l; i++) {
+                const bucketFile = bucket.file(expiredFiles[i]);
+
+                await bucketFile.delete();
+            }
+        }
     }
 
     const expiredEventCount = Object.keys(expiredEvents).length;
@@ -82,7 +97,7 @@ self.makeEvent = async function(params) {
 
             const location_data = await eventUtils.geocodeLocation(address);
 
-            tag = eventUtils.getLocationTag(address, title, description, location_data.types);
+            tag = eventUtils.getEventTag(title, description, location_data.types);
 
             lat = location_data.lat;
             lng = location_data.lng;
@@ -124,6 +139,16 @@ self.makeEvent = async function(params) {
 
         return `No new event data for [ ${title} ]`
     }
+
+    console.log(`Title: ${title}`);
+    console.log(`Date: ${date}`);
+    console.log(`Address: ${formattedAddress}`);
+    console.log(`Lat: ${lat}`);
+    console.log(`Tag: ${lng}`);
+    console.log(`Image URL: ${imageUrl}`);
+    console.log(`Timestamp: ${timestamp}`);
+    console.log(`Event ID: ${eventId}`);
+    console.log(`Tag: ${tag}`);
 
     return `Event creation failed [ ${title} ]`;
 };

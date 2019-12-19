@@ -10,7 +10,7 @@ const MAX_SCROLL_LOOP_LIMIT = 100000;
 const ACTION_DELAY_MS = 1250;
 const SCROLL_DELAY_MS = 200;
 
-const SCROLL_AMOUNT_PX = 400;
+const SCROLL_AMOUNT_PX = 500;
 
 let eventCount = 0;
 let scrollCount = 0;
