@@ -5,13 +5,12 @@ const firebase = require('./modules/firebase/index');
 
 //Do not put past 250 for daily updates, 500 for fresh database
 const MAX_EVENT_LOOP_LIMIT = 500;
-
 const MAX_SCROLL_LOOP_LIMIT = 100000;
 
-const ACTION_DELAY_MS = 1000;
-const SCROLL_DELAY_MS = 150;
+const ACTION_DELAY_MS = 1250;
+const SCROLL_DELAY_MS = 200;
 
-const SCROLL_AMOUNT_PX = 450;
+const SCROLL_AMOUNT_PX = 400;
 
 let eventCount = 0;
 let scrollCount = 0;
@@ -25,6 +24,8 @@ let driver;
         await buildDriver();
 
         await login(config.email, config.pass);
+
+        await firebase.clearOldEvents();
 
         await scrape();
 
@@ -56,8 +57,8 @@ async function login(email, pass) {
         await driver.get('https://www.facebook.com/');
 
         // Enter email and password then perform keyboard action "Enter"
-        await driver.findElement( By.name('email' ) ).sendKeys(email);
-        await driver.findElement( By.name('pass' ) ).sendKeys(pass, Key.ENTER);
+        await driver.findElement( By.name('email') ).sendKeys(email);
+        await driver.findElement( By.name('pass') ).sendKeys(pass, Key.ENTER);
 
     } catch(e) {
         throw new Error('An error occurred while trying to login')

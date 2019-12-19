@@ -15,18 +15,49 @@ let self = {
     database: admin.database,
 };
 
+self.clearOldEvents = async function() {
+
+    const expiredEvents = {};
+
+    const events = await self.database()
+        .ref('/events')
+        .once('value')
+        .then((snapshot) => snapshot.val() )
+        .catch( () => null);
+
+    const eventCount = events ? Object.keys(events).length : 0;
+
+    if(eventCount > 0) {
+
+        Object.keys(events).map((key) => {
+            if (Date.now() >= events[key].timestamp + 86400000) expiredEvents[key] = null;
+        });
+
+        await self.database()
+            .ref('/events').update(expiredEvents);
+
+    }
+
+    const expiredEventCount = Object.keys(expiredEvents).length;
+
+    console.log(`${expiredEventCount} events(s) have expired and been deleted.`);
+    console.log(`${eventCount-expiredEventCount} events(s) in the system.`);
+};
+
 self.makeEvent = async function(params) {
 
-    let lat, lng, timestamp, imageUrl, formattedAddress;
+    let lat, lng, imageUrl, formattedAddress, tag;
 
     const {title, description, address, date, image, eventId} = params;
+
+    const timestamp = await eventUtils.dateTextToTimestamp(date);
 
     const formattedEvent = {
         title,
         description,
         date,
+        timestamp,
         eventId,
-        tag: eventUtils.getLocationTag(address)
     };
 
     const duplicateEvent = await self.database()
@@ -51,29 +82,29 @@ self.makeEvent = async function(params) {
 
             const location_data = await eventUtils.geocodeLocation(address);
 
+            tag = eventUtils.getLocationTag(address, title, description, location_data.types);
+
             lat = location_data.lat;
             lng = location_data.lng;
             formattedAddress = location_data.formatted_address;
 
-            timestamp = await eventUtils.dateTextToTimestamp(date);
             imageUrl = await saveToStorage(image);
 
         } catch (e) {
-            console.log(e);
+            console.log(e.message);
         }
 
-        if (lat && lng && imageUrl && timestamp) {
-
+        if (lat && lng && imageUrl && timestamp && tag) {
 
             const newEventKey = self.database().ref().child('/events').push().key;
 
             formattedEvent['key'] = newEventKey;
             formattedEvent['lat'] = lat;
             formattedEvent['lng'] = lng;
+            formattedEvent['tag'] = tag;
             formattedEvent['location'] = formattedAddress;
             formattedEvent['image'] = imageUrl;
             formattedEvent['eventId'] = eventId;
-            formattedEvent['timestamp'] = timestamp;
 
             await self.database().ref('/events/' + newEventKey).set(formattedEvent);
 
@@ -82,10 +113,16 @@ self.makeEvent = async function(params) {
 
     } else {
 
-        //update the basic information of the event
-        await self.database().ref('/events/' + duplicateEvent.key).update(formattedEvent);
+        //are there any properties that need updating?
+        if(eventUtils.newEventData(formattedEvent, duplicateEvent)) {
 
-        return 'Event Updated : ' + title + `\n${JSON.stringify(formattedEvent)}`;
+            //update the basic information of the event
+            await self.database().ref('/events/' + duplicateEvent.key).update(formattedEvent);
+
+            return 'Event Updated : ' + title + `\n${JSON.stringify(formattedEvent)}`;
+        }
+
+        return `No new event data for [ ${title} ]`
     }
 
     return `Event creation failed [ ${title} ]`;
