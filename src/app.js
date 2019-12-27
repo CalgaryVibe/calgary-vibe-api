@@ -43,8 +43,8 @@ async function buildDriver() {
         options.setUserPreferences({'profile.default_content_setting_values.notifications': 2});
 
         //build the chrome driver
-        driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
-
+        driver = await new Builder().forBrowser('chrome').setChromeOptions(options).usingServer('http://localhost:4444/wd/hub').build();
+        //remove .usingServer to use local chrome driver
     } catch(e) {
         throw new Error('An error occurred while trying to build the chrome driver')
     }
